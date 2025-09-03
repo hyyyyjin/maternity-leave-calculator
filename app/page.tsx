@@ -176,7 +176,7 @@ export default function MaternityLeaveCalculator() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance">
-            🤱 출산 휴가<br />
+            출산 휴가<br />
             👶 육아 휴직 계산기
           </h1>
         </div>
@@ -346,10 +346,10 @@ export default function MaternityLeaveCalculator() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/3">구분</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/3">시작일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/5">종료일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/5">날짜수</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">구분</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">시작일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">종료일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">날짜수</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -387,10 +387,10 @@ export default function MaternityLeaveCalculator() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/3">구분</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/3">시작일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/5">종료일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/5">날짜수</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-2/8">구분</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-3/8">시작일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-2/8">종료일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/8">날짜수</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -401,7 +401,8 @@ export default function MaternityLeaveCalculator() {
                         type="date"
                         value={preChildcareStartDate}
                         onChange={(e) => setPreChildcareStartDate(e.target.value)}
-                        className="border-yellow-200 focus:border-yellow-500 text-xs w-full max-w-[85px] text-center"
+                        className="border-yellow-200 focus:border-yellow-500 text-xs"
+
                       />
                     </td>
                     <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
