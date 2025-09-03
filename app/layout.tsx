@@ -18,12 +18,12 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "출산 | 육아 휴직 계산기",
-    description: "휴가 일정 & 급여 계산",
+    description: "👶 출산 육아 휴직 일정 계산기",
     url: "https://hyyyyjin.github.io/maternity-leave-calculator/",
     siteName: "출산 | 육아 휴직 계산기",
     images: [
       {
-        url: "/og-image.svg",
+        url: "https://hyyyyjin.github.io/maternity-leave-calculator/og-image.svg",
         width: 1200,
         height: 630,
         alt: "출산 | 육아 휴직 계산기",
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "출산 | 육아 휴직 계산기",
-    description: "휴가 일정 & 급여 계산",
-    images: ["/og-image.svg"],
+    description: "👶 출산 육아 휴직 일정 계산기",
+    images: ["https://hyyyyjin.github.io/maternity-leave-calculator/og-image.svg"],
   },
   robots: {
     index: true,
