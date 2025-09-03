@@ -175,7 +175,7 @@ export default function MaternityLeaveCalculator() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance">🤱 출산 휴가 & 육아 휴직 계산기</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance">🤱 출산 휴가  👶 육아 휴직 계산기</h1>
         </div>
 
         {/* 입력 폼 - 모바일 최적화 */}
@@ -343,30 +343,30 @@ export default function MaternityLeaveCalculator() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">구분</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">시작일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">종료일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">날짜수</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">구분</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">시작일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">종료일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">날짜수</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 전 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.beforeLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.beforeLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{getDaysDifference(dates.beforeLeaveStart, dates.beforeLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 휴가</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.beforeLeaveStart, dates.beforeLeaveEnd)}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 후 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.afterLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.afterLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{getDaysDifference(dates.afterLeaveStart, dates.afterLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 후 휴가</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.afterLeaveStart, dates.afterLeaveEnd)}</td>
                   </tr>
                   <tr>
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.childcareStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.childcareEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.childcareDays}</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">육아 휴직</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareDays}</td>
                   </tr>
                 </tbody>
               </table>
@@ -384,47 +384,47 @@ export default function MaternityLeaveCalculator() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">구분</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">시작일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">종료일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/4">날짜수</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">구분</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">시작일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">종료일</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/4">날짜수</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b bg-yellow-50">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 전 육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 육아 휴직</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">
                       <Input
                         type="date"
                         value={preChildcareStartDate}
                         onChange={(e) => setPreChildcareStartDate(e.target.value)}
-                        className="border-yellow-200 focus:border-yellow-500 text-sm"
+                        className="border-yellow-200 focus:border-yellow-500 text-xs"
                       />
                     </td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
                       {preChildcareDates ? preChildcareDates.endDate : '-'}
                     </td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
                       {preChildcareDates ? preChildcareDates.days : '-'}
                     </td>
                   </tr>
                   <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 전 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.beforeLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.beforeLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{getDaysDifference(dates.beforeLeaveStart, dates.beforeLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 휴가</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.beforeLeaveStart, dates.beforeLeaveEnd)}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 후 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.afterLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.afterLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{getDaysDifference(dates.afterLeaveStart, dates.afterLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 후 휴가</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.afterLeaveStart, dates.afterLeaveEnd)}</td>
                   </tr>
                   <tr>
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">출산 후 육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.childcareStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{dates.childcareEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 후 육아 휴직</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareStart}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareEnd}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
                       {preChildcareDates ? 365 - preChildcareDates.days : 365}
                     </td>
                   </tr>
