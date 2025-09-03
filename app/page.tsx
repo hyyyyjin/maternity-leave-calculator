@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 
 export default function MaternityLeaveCalculator() {
   const [dueDate, setDueDate] = useState("2025-04-30")
   const [monthlySalary, setMonthlySalary] = useState("3000000")
   const [spouseLeave, setSpouseLeave] = useState("yes")
-  const [afterLeaveDays, setAfterLeaveDays] = useState("45")
   const [totalLeaveDays, setTotalLeaveDays] = useState("90")
   const [childcareDays, setChildcareDays] = useState("365")
   const [preChildcareStartDate, setPreChildcareStartDate] = useState("")
@@ -18,24 +20,9 @@ export default function MaternityLeaveCalculator() {
   // 유효성 검사 및 자동 조정
   const validateAndAdjustValues = () => {
     let adjusted = false
-    let newAfterLeaveDays = parseInt(afterLeaveDays)
     let newTotalLeaveDays = parseInt(totalLeaveDays)
 
-    // 출산 후 휴가가 총 휴가를 초과하는 경우
-    if (newAfterLeaveDays > newTotalLeaveDays) {
-      newAfterLeaveDays = newTotalLeaveDays
-      setAfterLeaveDays(newAfterLeaveDays.toString())
-      adjusted = true
-    }
-
-    // 출산 후 휴가가 최소값보다 작은 경우
-    if (newAfterLeaveDays < 45) {
-      newAfterLeaveDays = 45
-      setAfterLeaveDays(newAfterLeaveDays.toString())
-      adjusted = true
-    }
-
-    // 총 휴가가 최소값보다 작은 경우
+    // 총 휴가가 최소값보다 작은 경우(출산 후 45일 보장)
     if (newTotalLeaveDays < 45) {
       newTotalLeaveDays = 45
       setTotalLeaveDays(newTotalLeaveDays.toString())
@@ -46,35 +33,35 @@ export default function MaternityLeaveCalculator() {
   }
 
   // 날짜 계산 함수
-  const calculateDates = (dueDateStr: string, afterLeaveDaysStr: string, totalLeaveDaysStr: string, childcareDaysStr: string) => {
+  const calculateDates = (dueDateStr: string, totalLeaveDaysStr: string, childcareDaysStr: string) => {
     const dueDate = new Date(dueDateStr)
-    const afterLeaveDays = parseInt(afterLeaveDaysStr)
+    const afterLeaveDays = 45 // 출산 후 휴가 45일 고정
     const totalLeaveDays = parseInt(totalLeaveDaysStr)
     const childcareDays = parseInt(childcareDaysStr)
-    
-    // 출산 후 휴가 (사용자 입력값)
+
+    // 출산 후 휴가
     const afterLeaveStart = new Date(dueDate)
     afterLeaveStart.setDate(dueDate.getDate() + 1)
-    
+
     const afterLeaveEnd = new Date(afterLeaveStart)
     afterLeaveEnd.setDate(afterLeaveStart.getDate() + afterLeaveDays - 1)
-    
+
     // 출산 전 휴가 (총 휴가 - 출산 후 휴가)
     const beforeLeaveDays = totalLeaveDays - afterLeaveDays
-    
+
     const beforeLeaveStart = new Date(dueDate)
-    beforeLeaveStart.setDate(dueDate.getDate() - beforeLeaveDays)
-    
+    beforeLeaveStart.setDate(dueDate.getDate() - Math.max(beforeLeaveDays, 0))
+
     const beforeLeaveEnd = new Date(dueDate)
     beforeLeaveEnd.setDate(dueDate.getDate() - 1)
-    
-    // 육아 휴직 (사용자 입력값)
+
+    // 육아 휴직
     const childcareStart = new Date(afterLeaveEnd)
     childcareStart.setDate(afterLeaveEnd.getDate() + 1)
-    
+
     const childcareEnd = new Date(childcareStart)
     childcareEnd.setDate(childcareStart.getDate() + childcareDays - 1)
-    
+
     return {
       beforeLeaveStart: beforeLeaveStart.toISOString().split('T')[0],
       beforeLeaveEnd: beforeLeaveEnd.toISOString().split('T')[0],
@@ -89,7 +76,7 @@ export default function MaternityLeaveCalculator() {
     }
   }
 
-  const dates = calculateDates(dueDate, afterLeaveDays, totalLeaveDays, childcareDays)
+  const dates = calculateDates(dueDate, totalLeaveDays, childcareDays)
 
   // 출산 전 육아 휴직 날짜 계산
   const calculatePreChildcareDates = () => {
@@ -185,15 +172,36 @@ export default function MaternityLeaveCalculator() {
         <Card className="mb-6 shadow-sm">
           <CardContent className="p-4 md:p-6">
             <div className="space-y-4">
-              {/* 출산 예정일 */}
+              {/* 출산 시작일 - 달력 선택 */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 예정일</Label>
-                <Input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex-1 transition-colors"
-                />
+                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 시작일</Label>
+                <div className="flex-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal border-gray-200"
+                      >
+                        {dueDate ? new Date(dueDate).toLocaleDateString() : "날짜 선택"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={new Date(dueDate)}
+                        onSelect={(date) => {
+                          if (date) {
+                            const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .split('T')[0]
+                            setDueDate(iso)
+                          }
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               {/* 월 급여 */}
@@ -224,35 +232,6 @@ export default function MaternityLeaveCalculator() {
                     <SelectItem value="no">아니오</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* 출산 후 휴가 기간 */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 후 휴가 기간</Label>
-                <div className="relative flex-1">
-                  <Input
-                    type="number"
-                    value={afterLeaveDays}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setAfterLeaveDays(value)
-                      // 실시간 유효성 검사
-                      if (parseInt(value) > parseInt(totalLeaveDays)) {
-                        e.target.classList.add('border-red-500', 'ring-2', 'ring-red-200')
-                      } else {
-                        e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-200')
-                      }
-                    }}
-                    onBlur={() => validateAndAdjustValues()}
-                    min="45"
-                    max={totalLeaveDays}
-                    className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-16 transition-colors"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">일</span>
-                </div>
-                {parseInt(afterLeaveDays) > parseInt(totalLeaveDays) && (
-                  <span className="text-xs text-red-500 mt-1 sm:mt-0">총 휴가 기간을 초과할 수 없습니다</span>
-                )}
               </div>
 
 
@@ -286,7 +265,7 @@ export default function MaternityLeaveCalculator() {
                           const value = e.target.value
                           setTotalLeaveDays(value)
                           // 실시간 유효성 검사
-                          if (parseInt(value) < parseInt(afterLeaveDays)) {
+                          if (parseInt(value) < 45) {
                             e.target.classList.add('border-red-500', 'ring-2', 'ring-red-200')
                           } else {
                             e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-200')
@@ -317,20 +296,19 @@ export default function MaternityLeaveCalculator() {
                     </div>
                   </div>
                 </div>
-                {parseInt(totalLeaveDays) < parseInt(afterLeaveDays) && (
-                  <div className="text-xs text-red-500 mt-1">총 휴가 기간은 출산 후 휴가 기간보다 커야 합니다</div>
+                {parseInt(totalLeaveDays) < 45 && (
+                  <div className="text-xs text-red-500 mt-1">총 휴가 기간은 출산 후 휴가 기간(45일)보다 커야 합니다</div>
                 )}
               </div>
             </div>
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="space-y-1 text-xs md:text-sm text-blue-800">
-                <p>• 출산 예정일을 입력해 주세요.</p>
+                <p>• 달력에서 출산 시작일을 선택해 주세요.</p>
                 <p>• 월 급여를 입력해 주세요.</p>
                 <p>• 배우자의 육아 휴직 여부를 선택해 주세요.</p>
-                <p>• 출산 후 휴가 기간을 입력해 주세요 (45일 이상).</p>
                 <p>• 육아 휴직 기간을 설정해 주세요 (30일~730일).</p>
-                <p>• 출산 전 휴가는 자동으로 계산됩니다 (출산 휴가 - 출산 후 휴가).</p>
+                <p>• 출산 전 휴가는 자동으로 계산됩니다 (출산 휴가 - 45일).</p>
               </div>
             </div>
           </CardContent>
