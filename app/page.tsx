@@ -16,6 +16,8 @@ export default function MaternityLeaveCalculator() {
   const [totalLeaveDays, setTotalLeaveDays] = useState("90")
   const [childcareDays, setChildcareDays] = useState("365")
   const [preChildcareStartDate, setPreChildcareStartDate] = useState("")
+  const [maternityLeaveStartDate, setMaternityLeaveStartDate] = useState("")
+  const [maternityLeaveStartEdited, setMaternityLeaveStartEdited] = useState(false)
 
   // 유효성 검사 및 자동 조정
   const validateAndAdjustValues = () => {
@@ -126,6 +128,13 @@ export default function MaternityLeaveCalculator() {
     setPreChildcareStartDate(beforeLeaveStart.toISOString().split('T')[0])
   }, [dueDate, dates.beforeLeaveDays])
 
+  // 출산휴가 시작일 기본값을 출산 전 휴가 시작일과 동기화 (사용자 수정 전)
+  useEffect(() => {
+    if (!maternityLeaveStartEdited) {
+      setMaternityLeaveStartDate(dates.beforeLeaveStart)
+    }
+  }, [dates.beforeLeaveStart, maternityLeaveStartEdited])
+
   // 급여 포맷팅
   const formatSalary = (salary: string) => {
     return parseInt(salary).toLocaleString()
@@ -234,6 +243,22 @@ export default function MaternityLeaveCalculator() {
                 </Select>
               </div>
 
+              {/* 출산휴가 시작일 */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산휴가 시작일</Label>
+                <div className="flex-1">
+                  <Input
+                    type="date"
+                    value={maternityLeaveStartDate}
+                    onChange={(e) => {
+                      setMaternityLeaveStartDate(e.target.value)
+                      setMaternityLeaveStartEdited(true)
+                    }}
+                    className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                  />
+                </div>
+              </div>
+
 
               {/* 기본 정보 */}
               <div className="space-y-4 pt-4 border-t">
@@ -335,15 +360,7 @@ export default function MaternityLeaveCalculator() {
                 <tbody>
                   <tr className="border-b bg-yellow-50">
                     <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">
-                      <Input
-                        type="date"
-                        value={preChildcareStartDate}
-                        onChange={(e) => setPreChildcareStartDate(e.target.value)}
-                        className="border-yellow-200 focus:border-yellow-500 text-xs"
-
-                      />
-                    </td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">{dates.beforeLeaveStart}</td>
                     <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
                       {preChildcareDates ? preChildcareDates.endDate : '-'}
                     </td>
@@ -375,7 +392,7 @@ export default function MaternityLeaveCalculator() {
               </table>
             </div>
             <div className="mt-4 space-y-1 text-sm md:text-base text-gray-600">
-              <p>• 노란색 육아 휴직 시작일을 입력해 주세요.</p>
+              <p>• 출산 전 육아 휴직 시작일은 자동으로 계산됩니다.</p>
             </div>
           </CardContent>
         </Card>
