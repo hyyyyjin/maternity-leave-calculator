@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 
 export default function MaternityLeaveCalculator() {
   const [dueDate, setDueDate] = useState(() => {
@@ -21,8 +20,6 @@ export default function MaternityLeaveCalculator() {
     return today.toISOString().split("T")[0]
   })
   const [leaveStartEdited, setLeaveStartEdited] = useState(false)
-  
-  // UPDATED: 통합된 오류 메시지 상태
   const [startDateError, setStartDateError] = useState("")
 
   const [leaveSchedule, setLeaveSchedule] = useState({
@@ -39,9 +36,18 @@ export default function MaternityLeaveCalculator() {
     totalMaternityStr: string,
     totalChildcareStr: string
   ) => {
-    // Helper functions
     const parseDate = (dateStr: string) => new Date(dateStr + "T00:00:00")
-    const formatDate = (date: Date) => date.toISOString().split("T")[0]
+    
+    // --- BUG FIX ---
+    // toISOString() causes timezone issues. This new function formats the date correctly.
+    const formatDate = (date: Date) => {
+      if (isNaN(date.getTime())) return "-";
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     const addDays = (date: Date, days: number) => {
       const result = new Date(date)
       result.setDate(result.getDate() + days)
@@ -58,16 +64,13 @@ export default function MaternityLeaveCalculator() {
     const totalMaternityDays = parseInt(totalMaternityStr) || 0
     const totalChildcareDays = parseInt(totalChildcareStr) || 0
 
-    // NEW: Validation for start date being after due date
     if (overallStartDate > dueDate) {
       setStartDateError("휴가 시작일은 출산 예정일보다 늦을 수 없습니다.")
-      // Return a predictable state on error
       return { ...leaveSchedule }
     }
 
-    // --- Core Rule Implementation ---
     const minPostMaternityDays = 45
-    const preMaternityEnd = dueDate
+    const preMaternityEnd = addDays(dueDate, -1)
     const maxPreMaternityDays = Math.max(0, totalMaternityDays - minPostMaternityDays)
     const earliestMaternityStartDate = addDays(preMaternityEnd, -(maxPreMaternityDays > 0 ? maxPreMaternityDays - 1 : 0))
 
@@ -89,14 +92,13 @@ export default function MaternityLeaveCalculator() {
     const preMaternityDays = getDaysDiff(preMaternityStart, preMaternityEnd)
     const postMaternityDays = totalMaternityDays - preMaternityDays
     
-    // UPDATED: Combined validation check
     if (postMaternityDays < minPostMaternityDays) {
       setStartDateError("시작일 지정으로 출산 후 휴가가 45일 미만이 됩니다.")
     } else {
-      setStartDateError("") // Clear error if valid
+      setStartDateError("")
     }
     
-    const postMaternityStart = addDays(dueDate, 1)
+    const postMaternityStart = dueDate
     const postMaternityEnd = addDays(postMaternityStart, postMaternityDays > 0 ? postMaternityDays - 1 : 0)
     
     const postChildcareDays = Math.max(0, totalChildcareDays - preChildcareDays)
@@ -110,8 +112,8 @@ export default function MaternityLeaveCalculator() {
         days: preChildcareDays,
       },
       preMaternity: {
-        start: formatDate(preMaternityStart),
-        end: formatDate(preMaternityEnd),
+        start: preMaternityDays > 0 ? formatDate(preMaternityStart) : "-",
+        end: preMaternityDays > 0 ? formatDate(preMaternityEnd) : "-",
         days: preMaternityDays,
       },
       postMaternity: {
@@ -134,6 +136,7 @@ export default function MaternityLeaveCalculator() {
     const totalDays = parseInt(totalLeaveDays) || 90
     const preDays = Math.max(0, totalDays - 45)
     const preMaternityEnd = new Date(dueDateObj)
+    preMaternityEnd.setDate(preMaternityEnd.getDate() - 1)
     let preMaternityStart = new Date(preMaternityEnd)
     if (preDays > 0) {
         preMaternityStart.setDate(preMaternityStart.getDate() - (preDays - 1))
@@ -176,17 +179,11 @@ export default function MaternityLeaveCalculator() {
         <Card className="mb-6 shadow-sm">
           <CardContent className="p-4 md:p-6">
             <div className="space-y-4">
-              {/* UPDATED: UI Grouping */}
               <h3 className="text-md font-semibold text-gray-800">기본 정보</h3>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 예정일</Label>
                   <div className="flex-1">
-                    <Input
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                    />
+                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors" />
                   </div>
                 </div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -204,7 +201,6 @@ export default function MaternityLeaveCalculator() {
               </div>
               {startDateError && <div className="text-xs text-red-500 sm:ml-[136px]">{startDateError}</div>}
 
-              {/* UPDATED: UI Grouping */}
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="text-md font-semibold text-gray-800">기간 설정</h3>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -226,7 +222,6 @@ export default function MaternityLeaveCalculator() {
           </CardContent>
         </Card>
         
-        {/* Result tables are the same */}
         <Card className="mb-6 shadow-sm">
           <CardHeader className="bg-gray-100 p-4"><CardTitle className="text-lg md:text-xl text-center text-gray-900">🗓️ 휴가 기간 상세</CardTitle></CardHeader>
           <CardContent className="p-4 md:p-6">
