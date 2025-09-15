@@ -15,337 +15,227 @@ export default function MaternityLeaveCalculator() {
   const [spouseLeave, setSpouseLeave] = useState("yes")
   const [totalLeaveDays, setTotalLeaveDays] = useState("90")
   const [childcareDays, setChildcareDays] = useState("365")
-  const [preChildcareStartDate, setPreChildcareStartDate] = useState("")
-  const [maternityLeaveStartDate, setMaternityLeaveStartDate] = useState("")
-  const [maternityLeaveStartEdited, setMaternityLeaveStartEdited] = useState(false)
+  const [leaveStartDate, setLeaveStartDate] = useState("")
+  const [leaveStartEdited, setLeaveStartEdited] = useState(false)
+  
+  // UPDATED: 통합된 오류 메시지 상태
+  const [startDateError, setStartDateError] = useState("")
 
-  // 유효성 검사 및 자동 조정
-  const validateAndAdjustValues = () => {
-    let adjusted = false
-    let newTotalLeaveDays = parseInt(totalLeaveDays)
+  const [leaveSchedule, setLeaveSchedule] = useState({
+    preChildcare: { start: "", end: "", days: 0 },
+    preMaternity: { start: "", end: "", days: 0 },
+    postMaternity: { start: "", end: "", days: 0 },
+    postChildcare: { start: "", end: "", days: 0 },
+  })
 
-    // 총 휴가가 최소값보다 작은 경우(출산 후 45일 보장)
-    if (newTotalLeaveDays < 45) {
-      newTotalLeaveDays = 45
-      setTotalLeaveDays(newTotalLeaveDays.toString())
-      adjusted = true
+  // --- CALCULATION LOGIC ---
+  const calculateAllDates = (
+    dueDateStr: string,
+    overallStartDateStr: string,
+    totalMaternityStr: string,
+    totalChildcareStr: string
+  ) => {
+    // Helper functions
+    const parseDate = (dateStr: string) => new Date(dateStr + "T00:00:00")
+    const formatDate = (date: Date) => date.toISOString().split("T")[0]
+    const addDays = (date: Date, days: number) => {
+      const result = new Date(date)
+      result.setDate(result.getDate() + days)
+      return result
+    }
+    const getDaysDiff = (start: Date, end: Date) => {
+      if (!start || !end || start > end) return 0
+      const diffTime = end.getTime() - start.getTime()
+      return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1
     }
 
-    return adjusted
-  }
+    const dueDate = parseDate(dueDateStr)
+    const overallStartDate = parseDate(overallStartDateStr)
+    const totalMaternityDays = parseInt(totalMaternityStr) || 0
+    const totalChildcareDays = parseInt(totalChildcareStr) || 0
 
-  // 날짜 계산 함수
-  const calculateDates = (dueDateStr: string, totalLeaveDaysStr: string, childcareDaysStr: string) => {
-    const dueDate = new Date(dueDateStr)
-    const afterLeaveDays = 45 // 출산 후 휴가 45일 고정
-    const totalLeaveDays = parseInt(totalLeaveDaysStr)
-    const childcareDays = parseInt(childcareDaysStr)
+    // NEW: Validation for start date being after due date
+    if (overallStartDate > dueDate) {
+      setStartDateError("휴가 시작일은 출산 예정일보다 늦을 수 없습니다.")
+      // Return a predictable state on error
+      return { ...leaveSchedule }
+    }
 
-    // 출산 후 휴가
-    const afterLeaveStart = new Date(dueDate)
-    afterLeaveStart.setDate(dueDate.getDate() + 1)
+    // --- Core Rule Implementation ---
+    const minPostMaternityDays = 45
+    const preMaternityEnd = dueDate
+    const maxPreMaternityDays = Math.max(0, totalMaternityDays - minPostMaternityDays)
+    const earliestMaternityStartDate = addDays(preMaternityEnd, -(maxPreMaternityDays > 0 ? maxPreMaternityDays - 1 : 0))
 
-    const afterLeaveEnd = new Date(afterLeaveStart)
-    afterLeaveEnd.setDate(afterLeaveStart.getDate() + afterLeaveDays - 1)
+    let preMaternityStart: Date, preChildcareStart: Date, preChildcareEnd: Date
+    let preChildcareDays = 0
 
-    // 출산 전 휴가 (총 휴가 - 출산 후 휴가)
-    const beforeLeaveDays = totalLeaveDays - afterLeaveDays
-
-    const beforeLeaveStart = new Date(dueDate)
-    beforeLeaveStart.setDate(dueDate.getDate() - Math.max(beforeLeaveDays, 0))
-
-    const beforeLeaveEnd = new Date(dueDate)
-    beforeLeaveEnd.setDate(dueDate.getDate() - 1)
-
-    // 육아 휴직
-    const childcareStart = new Date(afterLeaveEnd)
-    childcareStart.setDate(afterLeaveEnd.getDate() + 1)
-
-    const childcareEnd = new Date(childcareStart)
-    childcareEnd.setDate(childcareStart.getDate() + childcareDays - 1)
+    if (overallStartDate < earliestMaternityStartDate) {
+      preChildcareStart = overallStartDate
+      preChildcareEnd = addDays(earliestMaternityStartDate, -1)
+      preChildcareDays = getDaysDiff(preChildcareStart, preChildcareEnd)
+      preMaternityStart = earliestMaternityStartDate
+    } else {
+      preChildcareDays = 0
+      preChildcareStart = overallStartDate
+      preChildcareEnd = addDays(overallStartDate, -1)
+      preMaternityStart = overallStartDate
+    }
+    
+    const preMaternityDays = getDaysDiff(preMaternityStart, preMaternityEnd)
+    const postMaternityDays = totalMaternityDays - preMaternityDays
+    
+    // UPDATED: Combined validation check
+    if (postMaternityDays < minPostMaternityDays) {
+      setStartDateError("시작일 지정으로 출산 후 휴가가 45일 미만이 됩니다.")
+    } else {
+      setStartDateError("") // Clear error if valid
+    }
+    
+    const postMaternityStart = addDays(dueDate, 1)
+    const postMaternityEnd = addDays(postMaternityStart, postMaternityDays > 0 ? postMaternityDays - 1 : 0)
+    
+    const postChildcareDays = Math.max(0, totalChildcareDays - preChildcareDays)
+    const postChildcareStart = addDays(postMaternityEnd, 1)
+    const postChildcareEnd = addDays(postChildcareStart, postChildcareDays > 0 ? postChildcareDays - 1 : 0)
 
     return {
-      beforeLeaveStart: beforeLeaveStart.toISOString().split('T')[0],
-      beforeLeaveEnd: beforeLeaveEnd.toISOString().split('T')[0],
-      afterLeaveStart: afterLeaveStart.toISOString().split('T')[0],
-      afterLeaveEnd: afterLeaveEnd.toISOString().split('T')[0],
-      childcareStart: childcareStart.toISOString().split('T')[0],
-      childcareEnd: childcareEnd.toISOString().split('T')[0],
-      beforeLeaveDays,
-      afterLeaveDays,
-      totalLeaveDays,
-      childcareDays
+      preChildcare: {
+        start: preChildcareDays > 0 ? formatDate(preChildcareStart) : "-",
+        end: preChildcareDays > 0 ? formatDate(preChildcareEnd) : "-",
+        days: preChildcareDays,
+      },
+      preMaternity: {
+        start: formatDate(preMaternityStart),
+        end: formatDate(preMaternityEnd),
+        days: preMaternityDays,
+      },
+      postMaternity: {
+        start: formatDate(postMaternityStart),
+        end: formatDate(postMaternityEnd),
+        days: postMaternityDays,
+      },
+      postChildcare: {
+        start: postChildcareDays > 0 ? formatDate(postChildcareStart) : "-",
+        end: postChildcareDays > 0 ? formatDate(postChildcareEnd) : "-",
+        days: postChildcareDays,
+      },
     }
   }
 
-  const dates = calculateDates(dueDate, totalLeaveDays, childcareDays)
-
-  // 출산 전 육아 휴직 날짜 계산
-  const calculatePreChildcareDates = () => {
-    if (!preChildcareStartDate) return null
-    
-    const startDate = new Date(preChildcareStartDate)
-    const beforeLeaveStart = new Date(dueDate)
-    beforeLeaveStart.setDate(new Date(dueDate).getDate() - dates.beforeLeaveDays)
-    
-    // 출산 전 육아 휴직 종료일 = 출산 전 휴가 시작일 - 1일
-    const endDate = new Date(beforeLeaveStart)
-    endDate.setDate(beforeLeaveStart.getDate() - 1)
-    
-    // 기본값일 때는 0일로 설정 (시작일이 출산 전 휴가 시작일과 같을 때)
-    if (preChildcareStartDate === beforeLeaveStart.toISOString().split('T')[0]) {
-      return {
-        startDate: preChildcareStartDate,
-        endDate: preChildcareStartDate,
-        days: 0
-      }
-    }
-    
-    // 날짜수 계산
-    const days = getDaysDifference(preChildcareStartDate, endDate.toISOString().split('T')[0])
-    
-    return {
-      startDate: preChildcareStartDate,
-      endDate: endDate.toISOString().split('T')[0],
-      days: days
-    }
-  }
-
-  // 날짜 차이 계산
-  const getDaysDifference = (startDate: string, endDate: string) => {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-  }
-
-  const preChildcareDates = calculatePreChildcareDates()
-
-  // 출산 예정일이 변경될 때마다 출산 전 육아 휴직 시작일을 출산 전 휴가 시작일로 자동 업데이트
+  // Effect to set the default leave start date
   useEffect(() => {
-    const beforeLeaveStart = new Date(dueDate)
-    beforeLeaveStart.setDate(new Date(dueDate).getDate() - dates.beforeLeaveDays)
-    setPreChildcareStartDate(beforeLeaveStart.toISOString().split('T')[0])
-  }, [dueDate, dates.beforeLeaveDays])
-
-  // 출산휴가 시작일 기본값을 출산 전 휴가 시작일과 동기화 (사용자 수정 전)
-  useEffect(() => {
-    if (!maternityLeaveStartEdited) {
-      setMaternityLeaveStartDate(dates.beforeLeaveStart)
+    if (leaveStartEdited) return
+    const dueDateObj = new Date(dueDate + "T00:00:00")
+    const totalDays = parseInt(totalLeaveDays) || 90
+    const preDays = Math.max(0, totalDays - 45)
+    const preMaternityEnd = new Date(dueDateObj)
+    let preMaternityStart = new Date(preMaternityEnd)
+    if (preDays > 0) {
+        preMaternityStart.setDate(preMaternityStart.getDate() - (preDays - 1))
     }
-  }, [dates.beforeLeaveStart, maternityLeaveStartEdited])
+    setLeaveStartDate(preMaternityStart.toISOString().split("T")[0])
+  }, [dueDate, totalLeaveDays, leaveStartEdited])
+  
+  // Main effect to recalculate the schedule
+  useEffect(() => {
+    if (!dueDate || !leaveStartDate) return
+    const schedule = calculateAllDates(dueDate, leaveStartDate, totalLeaveDays, childcareDays)
+    setLeaveSchedule(schedule)
+  }, [dueDate, leaveStartDate, totalLeaveDays, childcareDays])
 
-  // 급여 포맷팅
-  const formatSalary = (salary: string) => {
-    return parseInt(salary).toLocaleString()
-  }
-
-  // 육아 휴직 급여 계산
+  // --- Handlers & Utils ---
+  const validateAndAdjustValues = () => { if (parseInt(totalLeaveDays) < 45) setTotalLeaveDays("45") }
+  const formatSalary = (salary: string) => parseInt(salary).toLocaleString()
   const calculateChildcareSalary = (baseSalary: number, period: string) => {
     switch (period) {
-      case 'first3months':
-        // 첫 3개월: 100% 지급, 최대 250만원
-        return Math.min(baseSalary, 2500000)
-      case '4to6months':
-        // 4~6개월: 100% 지급, 최대 200만원
-        return Math.min(baseSalary, 2000000)
-      case '7months':
-        // 7개월: 80% 지급, 최대 160만원
-        return Math.min(Math.floor(baseSalary * 0.8), 1600000)
-      default:
-        return baseSalary
+      case 'first3months': return Math.min(baseSalary, 2500000);
+      case '4to6months': return Math.min(baseSalary, 2000000);
+      case '7months': return Math.min(Math.floor(baseSalary * 0.8), 1600000);
+      default: return baseSalary;
     }
   }
-
-  // 월 급여 입력 처리 (숫자만 허용)
   const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '')
+    const value = e.target.value.replace(/[^0-9]/g, "")
     setMonthlySalary(value)
   }
-
-  // 월 급여 표시용 (천 단위 구분자 포함)
-  const displaySalary = monthlySalary ? formatSalary(monthlySalary) : ''
-
+  const displaySalary = monthlySalary ? formatSalary(monthlySalary) : ""
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance">
-            출산 휴가<br />
             👶 육아 휴직 계산기
           </h1>
         </div>
-
-        {/* 입력 폼 - 모바일 최적화 */}
         <Card className="mb-6 shadow-sm">
           <CardContent className="p-4 md:p-6">
             <div className="space-y-4">
-              {/* 출산 시작일 - 달력 선택 */}
+              {/* UPDATED: UI Grouping */}
+              <h3 className="text-md font-semibold text-gray-800">기본 정보</h3>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 시작일</Label>
+                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 예정일</Label>
                 <div className="flex-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal border-gray-200"
-                      >
-                        {dueDate ? new Date(dueDate).toLocaleDateString() : "날짜 선택"}
+                      <Button variant="outline" className="w-full justify-start text-left font-normal border-gray-200">
+                        {dueDate ? new Date(dueDate + "T00:00:00").toLocaleDateString() : "날짜 선택"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={new Date(dueDate)}
-                        onSelect={(date) => {
-                          if (date) {
-                            const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-                              .toISOString()
-                              .split('T')[0]
-                            setDueDate(iso)
-                          }
-                        }}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={new Date(dueDate)} onSelect={(date) => { if (date) { setDueDate(new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0]) }}} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
               </div>
-
-              {/* 월 급여 */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">월 급여</Label>
                 <div className="relative flex-1">
-                  <Input
-                    type="text"
-                    value={displaySalary}
-                    onChange={handleSalaryChange}
-                    placeholder="월 급여를 입력하세요"
-                    className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-12 transition-colors"
-                  />
+                  <Input type="text" value={displaySalary} onChange={handleSalaryChange} placeholder="월 급여를 입력하세요" className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-12 transition-colors" />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">원</span>
                 </div>
               </div>
-
-
-              {/* 배우자 육아 휴직 여부 */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">배우자 육아 휴직 여부</Label>
+                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">배우자 육아 휴직</Label>
                 <Select value={spouseLeave} onValueChange={setSpouseLeave}>
-                  <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex-1 transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">예</SelectItem>
-                    <SelectItem value="no">아니오</SelectItem>
-                  </SelectContent>
+                  <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex-1 transition-colors"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="yes">예</SelectItem><SelectItem value="no">아니오</SelectItem></SelectContent>
                 </Select>
               </div>
-
-              {/* 출산휴가 시작일 */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산휴가 시작일</Label>
+                <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">휴가 시작일</Label>
                 <div className="flex-1">
-                  <Input
-                    type="date"
-                    value={maternityLeaveStartDate}
-                    onChange={(e) => {
-                      setMaternityLeaveStartDate(e.target.value)
-                      setMaternityLeaveStartEdited(true)
-                    }}
-                    className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  />
+                  <Input type="date" value={leaveStartDate} onChange={(e) => { setLeaveStartDate(e.target.value); setLeaveStartEdited(true); }} className={`border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors ${startDateError ? 'border-red-500 ring-2 ring-red-200' : ''}`} />
                 </div>
               </div>
+              {startDateError && <div className="text-xs text-red-500 sm:ml-[136px]">{startDateError}</div>}
 
-
-              {/* 기본 정보 */}
+              {/* UPDATED: UI Grouping */}
               <div className="space-y-4 pt-4 border-t">
-                {/* 출산 휴가 정보 */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">출산 전 휴가</span>
-                    <span className="text-sm font-semibold text-gray-900">{dates.beforeLeaveDays}일</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">출산 후 휴가</span>
-                    <span className="text-sm font-semibold text-gray-900">{dates.afterLeaveDays}일</span>
+                <h3 className="text-md font-semibold text-gray-800">기간 설정</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 휴가</Label>
+                  <div className="relative flex-1">
+                    <Input type="number" value={totalLeaveDays} onChange={(e) => setTotalLeaveDays(e.target.value)} onBlur={validateAndAdjustValues} min="45" max="120" className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-16 transition-colors" />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">일</span>
                   </div>
                 </div>
-                
-                {/* 구분선 */}
-                <div className="border-t border-gray-200"></div>
-                
-                {/* 설정 가능한 기간 */}
-                <div className="space-y-4">
-                  {/* 출산 휴가 */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">출산 휴가</Label>
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        value={totalLeaveDays}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setTotalLeaveDays(value)
-                          // 실시간 유효성 검사
-                          if (parseInt(value) < 45) {
-                            e.target.classList.add('border-red-500', 'ring-2', 'ring-red-200')
-                          } else {
-                            e.target.classList.remove('border-red-500', 'ring-2', 'ring-red-200')
-                          }
-                        }}
-                        onBlur={() => validateAndAdjustValues()}
-                        min="45"
-                        max="120"
-                        className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-16 transition-colors"
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">일</span>
-                    </div>
-                  </div>
-                  
-                  {/* 육아 휴직 */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">육아 휴직</Label>
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        value={childcareDays}
-                        onChange={(e) => setChildcareDays(e.target.value)}
-                        min="30"
-                        max="730"
-                        className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-16 transition-colors"
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">일</span>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <Label className="text-sm font-semibold text-gray-900 min-w-[120px]">육아 휴직</Label>
+                  <div className="relative flex-1">
+                    <Input type="number" value={childcareDays} onChange={(e) => setChildcareDays(e.target.value)} min="0" className="border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 pr-16 transition-colors" />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">일</span>
                   </div>
                 </div>
-                {parseInt(totalLeaveDays) < 45 && (
-                  <div className="text-xs text-red-500 mt-1">총 휴가 기간은 출산 후 휴가 기간(45일)보다 커야 합니다</div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="space-y-1 text-xs md:text-sm text-blue-800">
-                <p>• 달력에서 출산 시작일을 선택해 주세요.</p>
-                <p>• 월 급여를 입력해 주세요.</p>
-                <p>• 배우자의 육아 휴직 여부를 선택해 주세요.</p>
-                <p>• 육아 휴직 기간을 설정해 주세요 (30일~730일).</p>
-                <p>• 출산 전 휴가는 자동으로 계산됩니다 (출산 휴가 - 45일).</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
         
-
-        {/* 출산 전 육아 휴직 이용하는 경우 */}
+        {/* Result tables are the same */}
         <Card className="mb-6 shadow-sm">
-          <CardHeader className="bg-gray-100 p-4">
-            <CardTitle className="text-lg md:text-xl text-center text-gray-900">👶 출산 전 육아 휴직</CardTitle>
-          </CardHeader>
+          <CardHeader className="bg-gray-100 p-4"><CardTitle className="text-lg md:text-xl text-center text-gray-900">🗓️ 휴가 기간 상세</CardTitle></CardHeader>
           <CardContent className="p-4 md:p-6">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
@@ -354,109 +244,71 @@ export default function MaternityLeaveCalculator() {
                     <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-2/8">구분</th>
                     <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-3/8">시작일</th>
                     <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-2/8">종료일</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/8">날짜수</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-xs md:text-sm text-gray-900 w-1/8">일수</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b bg-yellow-50">
                     <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">{dates.beforeLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
-                      {preChildcareDates ? preChildcareDates.endDate : '-'}
-                    </td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
-                      {preChildcareDates ? preChildcareDates.days : '-'}
-                    </td>
+                    <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">{leaveSchedule.preChildcare.start}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.preChildcare.end}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.preChildcare.days}일</td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 전 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.beforeLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.beforeLeaveStart, dates.beforeLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.preMaternity.start}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.preMaternity.end}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.preMaternity.days}일</td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 후 휴가</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.afterLeaveEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{getDaysDifference(dates.afterLeaveStart, dates.afterLeaveEnd)}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postMaternity.start}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postMaternity.end}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postMaternity.days}일</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-1 md:px-2 font-medium text-xs md:text-sm text-gray-900">출산 후 육아 휴직</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareStart}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{dates.childcareEnd}</td>
-                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">
-                      {preChildcareDates ? 365 - preChildcareDates.days : 365}
-                    </td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postChildcare.start}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postChildcare.end}</td>
+                    <td className="py-3 px-1 md:px-2 text-xs md:text-sm text-gray-900">{leaveSchedule.postChildcare.days}일</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 space-y-1 text-sm md:text-base text-gray-600">
-              <p>• 출산 전 육아 휴직 시작일은 자동으로 계산됩니다.</p>
-            </div>
           </CardContent>
         </Card>
-        {/* 육아 휴직 급여 자동 계산 */}
         <Card className="shadow-sm">
-          <CardHeader className="bg-gray-100 p-4">
-            <CardTitle className="text-lg md:text-xl text-center text-gray-900">💰 육아 휴직 급여 계산</CardTitle>
-          </CardHeader>
+          <CardHeader className="bg-gray-100 p-4"><CardTitle className="text-lg md:text-xl text-center text-gray-900">💰 육아 휴직 급여 계산</CardTitle></CardHeader>
           <CardContent className="p-4 md:p-6">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b bg-gray-50">
                     <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/2">구분</th>
-                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/2">급여</th>
+                    <th className="py-3 px-1 md:px-2 text-left font-semibold text-sm md:text-base text-gray-900 w-1/2">급여 (월)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아휴직 첫 3개월</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
-                      {monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), 'first3months').toString()) : '0'}원
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아휴직 4~6개월</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
-                      {monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), '4to6months').toString()) : '0'}원
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아 휴직 7개월</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
-                      {monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), '7months').toString()) : '0'}원
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">배우자 휴직 인센티브</td>
-                    <td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">
-                      {spouseLeave === 'yes' ? '500,000' : '0'}원
-                    </td>
-                  </tr>
+                  <tr className="border-b"><td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아휴직 첫 3개월</td><td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), 'first3months').toString()) : '0'}원</td></tr>
+                  <tr className="border-b"><td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아휴직 4~6개월</td><td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), '4to6months').toString()) : '0'}원</td></tr>
+                  <tr className="border-b"><td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">육아 휴직 7개월~</td><td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{monthlySalary ? formatSalary(calculateChildcareSalary(parseInt(monthlySalary), '7months').toString()) : '0'}원</td></tr>
+                  <tr><td className="py-3 px-1 md:px-2 font-medium text-sm md:text-base text-gray-900">배우자 휴직 인센티브</td><td className="py-3 px-1 md:px-2 text-sm md:text-base text-gray-900">{spouseLeave === 'yes' ? '500,000' : '0'}원</td></tr>
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 space-y-1 text-sm md:text-base text-gray-600">
-              <p>• 100% 지급, 최대 250만원</p>
-              <p>• 100% 지급, 최대 200만원</p>
-              <p>• 80% 지급, 최대 160만원</p>
-              <p>• 배우자도 육아 휴직 중이면 50만원 추가</p>
+            <div className="mt-4 space-y-1 text-sm text-gray-600">
+              <p>• <b>첫 3개월:</b> 통상임금 100% (상한 250만원)</p>
+              <p>• <b>4~6개월:</b> 통상임금 100% (상한 200만원)</p>
+              <p>• <b>7개월~:</b> 통상임금 80% (상한 160만원)</p>
+              <p>• <b>배우자 인센티브:</b> 3+3 부모육아휴직제 등 조건 충족 시 적용될 수 있습니다.</p>
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Footer */}
       <footer className="mt-12 py-6 border-t border-gray-200 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-gray-600">
-            © 2025 출산 휴가 & 육아 휴직 계산기. All rights reserved.
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Made with ❤️ by <span className="font-medium text-gray-700">ggumi</span>
-          </p>
+          <p className="text-sm text-gray-600">© 2025 출산 휴가 & 육아 휴직 계산기. All rights reserved.</p>
+          <p className="text-xs text-gray-500 mt-1">Made with ❤️ by <span className="font-medium text-gray-700">ggumi</span></p>
         </div>
       </footer>
     </div>
