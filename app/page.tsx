@@ -293,7 +293,7 @@ export default function MaternityLeaveCalculator() {
       </div>
       <footer className="mt-12 py-6 border-t border-gray-200 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-gray-600">© 2025 출산 휴가 & 육아 휴직 계산기. All rights reserved.</p>
+          <p className="text-sm text-gray-600">© 2025 육아 휴직 계산기. All rights reserved.</p>
           <p className="text-xs text-gray-500 mt-1">Made with ❤️ by <span className="font-medium text-gray-700">ggumi</span></p>
         </div>
       </footer>
