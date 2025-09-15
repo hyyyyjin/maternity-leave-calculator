@@ -7,11 +7,19 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 
 export default function MaternityLeaveCalculator() {
-  const [dueDate, setDueDate] = useState("2025-04-30")
+  const [dueDate, setDueDate] = useState(() => {
+    const today = new Date()
+    const threeMonthsLater = new Date(today)
+    threeMonthsLater.setMonth(today.getMonth() + 3)
+    return threeMonthsLater.toISOString().split("T")[0]
+  })
   const [monthlySalary, setMonthlySalary] = useState("3000000")
   const [totalLeaveDays, setTotalLeaveDays] = useState("90")
   const [childcareDays, setChildcareDays] = useState("365")
-  const [leaveStartDate, setLeaveStartDate] = useState("")
+  const [leaveStartDate, setLeaveStartDate] = useState(() => {
+    const today = new Date()
+    return today.toISOString().split("T")[0]
+  })
   const [leaveStartEdited, setLeaveStartEdited] = useState(false)
   
   // UPDATED: 통합된 오류 메시지 상태
